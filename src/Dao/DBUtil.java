@@ -1,37 +1,39 @@
 package Dao;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
+import javax.sql.DataSource;
+
 /**
- * H2 接続ユーティリティ。
- * 接続先は環境変数 CAMPUS_DB_URL / CAMPUS_DB_USER / CAMPUS_DB_PASS で上書きできます。
- * 既定はユーザーホーム直下のファイルDB（~/campustask）です。
- * ※ H2 は同じファイルDBを複数プロセスで開けないので、H2 Console と同時に使う場合は
- *    AUTO_SERVER=TRUE を付けています。
+ * DB接続ユーティリティ。
+ * context.xml の <Resource name="jdbc/sotugyoub" ...> で定義した DataSource（JNDI）から接続を取得します。
+ * 接続先（H2 の URL・ユーザー・パスワード）は context.xml 側だけで管理します。
  */
 public final class DBUtil {
-    private static final String URL  = env("CAMPUS_DB_URL", "jdbc:h2:~/campustask;AUTO_SERVER=TRUE");
-    private static final String USER = env("CAMPUS_DB_USER", "sa");
-    private static final String PASS = env("CAMPUS_DB_PASS", "");
+    private static final String JNDI_NAME = "java:comp/env/jdbc/sotugyoub";
 
-    static {
-        try {
-            Class.forName("org.h2.Driver");
-        } catch (ClassNotFoundException e) {
-            throw new ExceptionInInitializerError(e);
-        }
-    }
+    private static volatile DataSource dataSource;
 
     private DBUtil() {}
 
     public static Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(URL, USER, PASS);
+        return lookup().getConnection();
     }
 
-    private static String env(String key, String fallback) {
-        String v = System.getenv(key);
-        return (v == null || v.isEmpty()) ? fallback : v;
+    private static DataSource lookup() throws SQLException {
+        DataSource ds = dataSource;
+        if (ds == null) {
+            try {
+                ds = (DataSource) new InitialContext().lookup(JNDI_NAME);
+            } catch (NamingException e) {
+                throw new SQLException("DataSource が見つかりません: " + JNDI_NAME
+                        + "（context.xml の Resource 名を確認してください）", e);
+            }
+            dataSource = ds;
+        }
+        return ds;
     }
 }

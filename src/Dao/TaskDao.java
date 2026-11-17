@@ -82,7 +82,7 @@ public class TaskDao {
             ps.setString(8, task.getPriority());
             ps.executeUpdate();
             try (ResultSet keys = ps.getGeneratedKeys()) {
-                if (keys.next()) task.setId(keys.getInt("TASK_ID"));
+                if (keys.next()) task.setId(keys.getInt(1));
             }
             return task;
         } catch (SQLException e) {

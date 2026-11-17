@@ -1,6 +1,6 @@
 
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
-<%@ page import="campustask.*,java.util.*,java.time.*" %>
+<%@ page import="bean.*,campustask.*,java.util.*,java.time.*" %>
 
 <%
 AppData data = (AppData)request.getAttribute("data");
